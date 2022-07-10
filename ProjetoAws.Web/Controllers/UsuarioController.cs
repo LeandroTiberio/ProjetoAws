@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using ProjetoAWS.lib.Data.Repositorios.Interface;
-using ProjetoAWS.web.Properties.DTOs;
-using ProjetoRedeHoteis.lib.Exception;
+using ProjetoAws.Web.Properties.DTOs;
+using ProjetoAWS.Lib.Models;
+
+
 
 
 namespace ProjetoAws.Web.Controllers
@@ -11,6 +12,7 @@ namespace ProjetoAws.Web.Controllers
     public class UsuarioController : ControllerBase 
     {
         private readonly IsuarioRepositorio _repositorio;
+        public static List<Usuario> ListaUsuarios { get; set; } = new List<Usuario>();
         public UsuarioController(IUsuarioRepositorio _repositorio)
         {
             _repositorio = _repositorio;
@@ -36,7 +38,7 @@ namespace ProjetoAws.Web.Controllers
                 var usuario = new Usuario(usuarioDTO.Nome, usuarioDTO.Cpf, usuarioDTO.Email, usuarioDTO.Senha,
                                     usuarioDTO.DataNascimento, usuarioDTO.UrlImagemCadastro, usuarioDTO.DataCriacao);
                 await _repositorio.AdicionarAsync(usuario);
-                return Ok();
+                return Ok(usuario);
             }
             catch (ErroDeValidacaoException ex)
             {
@@ -49,7 +51,7 @@ namespace ProjetoAws.Web.Controllers
         public async Task<IActionResult> DeletarPorId(int id)
         {
             _repositorio.DeletarAsync(id);
-            return Ok();
+            return Ok("Usuario removido");
         }
 
 

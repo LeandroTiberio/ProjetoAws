@@ -1,9 +1,14 @@
 using Amazon.Runtime;
 using Amazon.S3;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+builder.Services.AddDbContext<ProjetoAWSContext>(
+        conn => conn.UseNpgsql(builder.Configuration.GetConnectionString("AWSDB"))
+        .UseSnakeCaseNamingConvention());
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -14,6 +19,9 @@ var awsOptions = builder.Configuration.GetAWSOptions();
 awsOptions.Credentials = new EnvironmentVariablesAWSCredentials();
 builder.Services.AddDefaultAWSOptions(awsOptions);
 builder.Services.AddAWSService<IAmazonS3>();
+
+
+builder.Services.AddScoped<IUsuarioRepositorio, UsuarioRepositorio>();
 
 var app = builder.Build();
 
