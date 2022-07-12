@@ -1,13 +1,16 @@
 using Amazon.Runtime;
 using Amazon.S3;
-
+using Curso.ProjetoAWS.Data.Repositorios;
+using Curso.ProjetoAWS.Lib.Data.Repositorios.Interface;
+using Microsoft.EntityFrameworkCore;
+using ProjetoAWS.Lib.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddDbContext<ProjetoAWSContext>(
-        conn => conn.UseNpgsql(builder.Configuration.GetConnectionString("AWSDB"))
+        conn => conn.UseNpgsql(builder.Configuration.GetConnectionString("ProjetoAWSDB"))
         .UseSnakeCaseNamingConvention());
 
 builder.Services.AddControllers();

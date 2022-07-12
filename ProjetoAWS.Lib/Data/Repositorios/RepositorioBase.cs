@@ -1,3 +1,8 @@
+using Curso.ProjetoAWS.Lib.Data.Repositorios.Interface;
+using ProjetoAWS.Lib.Models;
+using Microsoft.EntityFrameworkCore;
+using ProjetoAWS.Lib.Data;
+
 namespace Curso.ProjetoAWS.Data.Repositorios
 {
     public class RepositorioBase<T> : IRepositorioBase<T> where T : ModelBase
