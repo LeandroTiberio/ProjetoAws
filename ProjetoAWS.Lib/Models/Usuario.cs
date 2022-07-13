@@ -1,4 +1,3 @@
-using System;
 using ProjetoAWS.Lib.Exceptions;
 
 namespace ProjetoAWS.Lib.Models
