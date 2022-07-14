@@ -14,6 +14,30 @@ namespace ProjetoAws.Web.Controllers
         {
             _rekognitionClient = rekognitionClient;
         }
+
+        [HttpPost("Comparar")]
+        public async Task<IActionResult> CompararRosto(string nomeArquivoS3, IFormFile faceLogin)
+        { 
+            using (var memoryStream = new MemoryStream())
+            {
+                var sourceImage = new Image();
+                var Request = new CompareFacesRequest();
+                var s3Object = new S3Object()
+                {
+                    Bucket = "imagem-Aulas",
+                    Name = nomeArquivoS3
+                };
+
+                var targetImage = new Image();
+                var bytes = new MemoryStream();
+                {
+                    return Ok();
+                }
+            
+                
+            }
+        }
+                
         [HttpGet]
         public async Task<IActionResult> AnalisarRosto(string nomeArquivo)
         {
