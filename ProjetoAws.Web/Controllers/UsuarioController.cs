@@ -18,7 +18,7 @@ namespace ProjetoAws.Web.Controllers
             _repositorio = repositorio;
         }
 
-        [HttpGet]
+        [HttpGet("Todos")]
         public async Task<IActionResult> BuscarTodosAsync()
         {
             return Ok(await _repositorio.BuscarTodosAsync());
