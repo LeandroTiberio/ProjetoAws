@@ -28,7 +28,7 @@ namespace ProjetoAws.Web.Controllers
 
             imagem.S3Object = s3Object;
             entrada.Image = imagem;
-            entrada.Attributes = new List<string>(){"All"};
+            entrada.Attributes = new List<string>(){"ALL"};
             
             var resposta = await _rekognitionClient.DetectFacesAsync(entrada);
             
