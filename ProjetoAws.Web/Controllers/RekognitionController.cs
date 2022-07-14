@@ -16,26 +16,33 @@ namespace ProjetoAws.Web.Controllers
         }
 
         [HttpPost("Comparar")]
-        public async Task<IActionResult> CompararRosto(string nomeArquivoS3, IFormFile faceLogin)
+        public async Task<IActionResult> CompararRosto(string nomeArquivoS3, IFormFile fotoLogin)
         { 
             using (var memoryStream = new MemoryStream())
             {
-                var sourceImage = new Image();
-                var Request = new CompareFacesRequest();
-                var s3Object = new S3Object()
+                var request = new CompareFacesRequest();
+                var requestsourceImagem = new Image()
                 {
-                    Bucket = "imagem-Aulas",
-                    Name = nomeArquivoS3
+                    S3Object = new S3Object()
+                    {
+                        Bucket = "imagem-Aulas",
+                        Name = nomeArquivoS3
+                    }
                 };
+                    
+                await fotoLogin.CopyToAsync(memoryStream);
 
-                var targetImage = new Image();
-                var bytes = new MemoryStream();
+                var requesttargetImagem = new Image()
                 {
-                    return Ok();
-                }
-            
-                
+                    Bytes = memoryStream
+                };
+                request.SourceImage = requestsourceImagem;  
+                request.TargetImage = requesttargetImagem;
+
+                var resposta = await _rekognitionClient.CompareFacesAsync(request);
+                return Ok(resposta);
             }
+                
         }
                 
         [HttpGet]
