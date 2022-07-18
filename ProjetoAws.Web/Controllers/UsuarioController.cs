@@ -59,15 +59,17 @@ namespace ProjetoAws.Web.Controllers
         {
             var nomeArquivo = await SalvarNoS3(imagem);
             var imagemValida = await ValidarImagem(nomeArquivo);
+            var usuario = await _repositorio.BuscarPorIdAsync(id);
+            
             if(imagemValida)
             {   
-                await _amazonS3.PutBucketAsync(nomeArquivo);
-                return BadRequest();
+                await _amazonS3.AnalisarRostoAsync(string nomeArquivo);
+                return Ok("Retrado slavo");
             }
             else
             {
                 await _amazonS3.DeleteObjectAsync("imagem-aulas", nomeArquivo);
-                return BadRequest();
+                return BadRequest("Retrado Invalido");
             }
         }
 
@@ -93,7 +95,7 @@ namespace ProjetoAws.Web.Controllers
 
         private async Task<bool> ValidarImagem(string nomeArquivo)
         {
-             var entrada = new DetectFacesRequest();
+            var entrada = new DetectFacesRequest();
             var imagem = new Image();
 
             var s3Object = new Amazon.Rekognition.Model.S3Object()
@@ -114,7 +116,7 @@ namespace ProjetoAws.Web.Controllers
             }
             else
             {
-                return true;
+                return false;
             }
         }
 
@@ -132,6 +134,23 @@ namespace ProjetoAws.Web.Controllers
             await _repositorio.DeletarAsync(id);
             return Ok("Usuario removido");
         }
+        private async Task<IActionResult> LoginImagem (IFormFile imagem)
+        {
+            var resposta = await _amazonS3.ListBucketsAsync();
+            
+            return Ok(resposta.Buckets);
+        }
+
+        [HttpPost("Login email senha")]
+        private async Task<IActionResult> BuscarEmail(string email, string senha)
+        {
+            var login = await _amazonS3.ValidarEmail();
+            var resposta = await _amazonS3.ValidarSenha(login);
+            return Ok(login);
+        }
+
+        [HttpPost("Buscar Usuario")]
+       private async Task<IActionResult 
 
 
     }
