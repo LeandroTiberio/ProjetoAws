@@ -8,6 +8,8 @@ namespace Curso.ProjetoAWS.Lib.Data.Repositorios.Interface
         Task<T> BuscarPorIdAsync(int id);
         Task AdicionarAsync(T item);
         Task DeletarAsync(int id);
+        
+
          
     }
 }

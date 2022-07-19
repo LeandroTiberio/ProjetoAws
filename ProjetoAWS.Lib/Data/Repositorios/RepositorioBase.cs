@@ -28,11 +28,14 @@ namespace Curso.ProjetoAWS.Data.Repositorios
             await _context.SaveChangesAsync();
         }
        
-         public async Task DeletarAsync(int id)
+        public async Task DeletarAsync(int id)
         {
             var item = await _dbset.AsNoTracking().FirstAsync(x => x.Id == id);
             _dbset.Remove(item);
             await _context.SaveChangesAsync();
         }
+        
+        
+
     }
 }

@@ -63,8 +63,8 @@ namespace ProjetoAws.Web.Controllers
             
             if(imagemValida)
             {   
-                await _amazonS3.AnalisarRostoAsync(string nomeArquivo);
-                return Ok("Retrado slavo");
+                await _repositorio.AtualizarImagemAsync(id);
+                return Ok();
             }
             else
             {
@@ -118,6 +118,9 @@ namespace ProjetoAws.Web.Controllers
             {
                 return false;
             }
+
+            
+
         }
 
         [HttpPut]
@@ -139,22 +142,57 @@ namespace ProjetoAws.Web.Controllers
             var resposta = await _amazonS3.ListBucketsAsync();
             
             return Ok(resposta.Buckets);
+
+            
         }
 
-        [HttpPost("Login email senha")]
-        private async Task<IActionResult> BuscarEmail(string email, string senha)
+        [HttpPost("Login email")]
+        private async Task<Usuario> LoginPorEmail(string email)
         {
-            var login = await _amazonS3.ValidarEmail();
-            var resposta = await _amazonS3.ValidarSenha(login);
-            return Ok(login);
+            var usuario = await _repositorio.BuscarUsuarioPorEmail(email);
+            return (usuario);
+        } 
+        private async Task<Usuario> SenhaUsuario(string senha)
+        {
+            if (LoginPorEmail == SenhaUsuario) 
+            {
+                var retorno = await _repositorio.SenhaUsuario(senha);
+                return retorno;
+            }
+            else
+            {
+                throw new Exception ("Email diferente de senha");
+            }
         }
+        [HttpPost("comparar rosto")]
+        
+        public async Task<bool> CompararRostoAsync(string nomeArquivoS3, IFormFile fotoLogin)
+        { 
+            using (var memoryStream = new MemoryStream())
+            {
+                var request = new CompareFacesRequest();
+                var requestsourceImagem = new Image()
+                {
+                    S3Object = new Amazon.Rekognition.Model.S3Object()
+                    {
+                        Bucket = "imagem-Aulas",
+                        Name = nomeArquivoS3
+                    }
+                };
+                    
+                await fotoLogin.CopyToAsync(memoryStream);
 
-        [HttpPost("Buscar Usuario")]
-       private async Task<IActionResult 
+                var requesttargetImagem = new Image()
+                {
+                    Bytes = memoryStream
+                };
+                request.SourceImage = requestsourceImagem;  
+                request.TargetImage = requesttargetImagem;
 
-
+                var resposta = await _rekognitionClient.CompareFacesAsync(request);
+                return true;
+            }
+        }
     }
-
-
 }
 
