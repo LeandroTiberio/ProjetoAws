@@ -9,7 +9,7 @@ namespace ProjetoAws.Web.Controllers
     public class ImagensController : ControllerBase
     {
         private readonly IAmazonS3 _amazonS3;
-        private static readonly List<string> _extensoesImagem = new List<string>(){"imagejpeg", "imagepng"};
+        private static readonly List<string> _extensoesImagem = new List<string>(){"imagejpeg", "imagejpg"};
         public ImagensController(IAmazonS3 amazonS3)
         {
             _amazonS3 = amazonS3;

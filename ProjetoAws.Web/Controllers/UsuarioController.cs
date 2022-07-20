@@ -18,7 +18,7 @@ namespace ProjetoAws.Web.Controllers
         private readonly IUsuarioRepositorio _repositorio;
         private readonly IAmazonS3 _amazonS3;
         private readonly AmazonRekognitionClient _rekognitionClient;
-        private static readonly List<string> _extensoesImagem = new List<string>(){"imagejpeg", "imagepng"};
+        private static readonly List<string> _extensoesImagem = new List<string>(){"image/jpeg", "image/jpg", "image/jpg"};
         public static List<Usuario> ListaUsuarios { get; set; } = new List<Usuario>();
         public UsuarioController(IUsuarioRepositorio repositorio, IAmazonS3 amazonS3, AmazonRekognitionClient rekognitionClient  )
         {
@@ -54,24 +54,56 @@ namespace ProjetoAws.Web.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         [HttpPost("Cadastro Imagem")]
         public async Task<IActionResult> CadastroDeImagem(int id, IFormFile imagem)
         {
-            var nomeArquivo = await SalvarNoS3(imagem);
-            var imagemValida = await ValidarImagem(nomeArquivo);
             var usuario = await _repositorio.BuscarPorIdAsync(id);
+            var imagemValida = await ValidarImagem(usuario.UrlImagemCadastro, imagem);
             
             if(imagemValida)
             {   
-                await _repositorio.AtualizarImagemAsync(id);
-                return Ok();
+                return Ok("Id imagem confirmada");
             }
             else
             {
-                await _amazonS3.DeleteObjectAsync("imagem-aulas", nomeArquivo);
-                return BadRequest("Retrado Invalido");
+                return BadRequest("Imagem Invalido com cadastro");
             }
         }
+
+       private async Task<bool> ValidarImagem(string nomeArquivoS3, IFormFile fotoLogin)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                var request = new CompareFacesRequest();
+                var requestSource = new Image()
+                {
+                    S3Object = new Amazon.Rekognition.Model.S3Object()
+                    {
+                        Bucket = "registro",
+                        Name = nomeArquivoS3
+                    }
+                };
+
+
+                await fotoLogin.CopyToAsync(memoryStream);
+                var requestTarget = new Image()
+                {
+                    Bytes = memoryStream
+                };
+
+                request.SourceImage = requestSource;
+                request.TargetImage = requestTarget;
+
+                var response = await _rekognitionClient.CompareFacesAsync(request);
+                if (response.FaceMatches.Count == 1 && response.FaceMatches.First().Similarity >= 80)
+                {
+                    return true;
+                }
+                return false;
+            }
+        }
+
 
         private async Task<string> SalvarNoS3(IFormFile imagem)
         {
@@ -85,7 +117,7 @@ namespace ProjetoAws.Web.Controllers
 
                 var request = new PutObjectRequest();
                 request.Key = "reconhecimento" + imagem.FileName;
-                request.BucketName = "imagem-Aulas";
+                request.BucketName = "Registro";
                 request.InputStream = streamDaImagem;
                 
                 var resposta = await _amazonS3.PutObjectAsync(request);
@@ -93,35 +125,7 @@ namespace ProjetoAws.Web.Controllers
             }
         }
 
-        private async Task<bool> ValidarImagem(string nomeArquivo)
-        {
-            var entrada = new DetectFacesRequest();
-            var imagem = new Image();
-
-            var s3Object = new Amazon.Rekognition.Model.S3Object()
-            {
-                Bucket = "imagem-Aulas",
-                Name = nomeArquivo
-            };
-
-            imagem.S3Object = s3Object;
-            entrada.Image = imagem;
-            entrada.Attributes = new List<string>(){"ALL"};
-            
-            var resposta = await _rekognitionClient.DetectFacesAsync(entrada);
-            
-            if(resposta.FaceDetails.Count == 1 && resposta.FaceDetails.First().Eyeglasses.Value == false)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-
-            
-
-        }
+       
 
         [HttpPut]
         public async Task<IActionResult> Alterar(int id, string senha)
@@ -137,33 +141,38 @@ namespace ProjetoAws.Web.Controllers
             await _repositorio.DeletarAsync(id);
             return Ok("Usuario removido");
         }
-        private async Task<IActionResult> LoginImagem (IFormFile imagem)
-        {
-            var resposta = await _amazonS3.ListBucketsAsync();
-            
-            return Ok(resposta.Buckets);
-
-            
-        }
+        
 
         [HttpPost("Login email")]
-        private async Task<Usuario> LoginPorEmail(string email)
+
+        private async Task<IActionResult> LoginPorEmail(string email, string senha)
         {
             var usuario = await _repositorio.BuscarUsuarioPorEmail(email);
-            return (usuario);
-        } 
-        private async Task<Usuario> SenhaUsuario(string senha)
-        {
-            if (LoginPorEmail == SenhaUsuario) 
+            var confirmacao = await ConferenciaSenha(usuario , senha);
+
+            if(confirmacao)
             {
-                var retorno = await _repositorio.SenhaUsuario(senha);
-                return retorno;
+                return Ok(usuario.Id);
             }
             else
             {
-                throw new Exception ("Email diferente de senha");
+                return BadRequest("Login e senha não são de cadastro");
             }
+        } 
+    
+           
+        private async Task<bool> ConferenciaSenha(Usuario usuario, string senha)
+        {
+            
+            if (usuario.Senha == senha)
+            {
+                return true;
+            }
+            return false;
         }
+
+
+
         [HttpPost("comparar rosto")]
         
         public async Task<bool> CompararRostoAsync(string nomeArquivoS3, IFormFile fotoLogin)
