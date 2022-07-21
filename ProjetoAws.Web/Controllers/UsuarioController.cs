@@ -18,7 +18,7 @@ namespace ProjetoAws.Web.Controllers
         private readonly IUsuarioRepositorio _repositorio;
         private readonly IAmazonS3 _amazonS3;
         private readonly AmazonRekognitionClient _rekognitionClient;
-        private static readonly List<string> _extensoesImagem = new List<string>(){"image/jpeg", "image/jpg", "image/jpg"};
+        private static readonly List<string> _extensoesImagem = new List<string>(){"image/jpeg", "image/jpg", "image/png"};
         public static List<Usuario> ListaUsuarios { get; set; } = new List<Usuario>();
         public UsuarioController(IUsuarioRepositorio repositorio, IAmazonS3 amazonS3, AmazonRekognitionClient rekognitionClient  )
         {
@@ -58,49 +58,65 @@ namespace ProjetoAws.Web.Controllers
         [HttpPost("Cadastro Imagem")]
         public async Task<IActionResult> CadastroDeImagem(int id, IFormFile imagem)
         {
-            var usuario = await _repositorio.BuscarPorIdAsync(id);
-            var imagemValida = await ValidarImagem(usuario.UrlImagemCadastro, imagem);
+            var nomeArquivo = await SalvarNoS3(imagem);
+            var imagemValida = await ValidarImagem(nomeArquivo);
             
             if(imagemValida)
-            {   
-                return Ok("Id imagem confirmada");
+            {   //buscar usuario no banco pelo ID,
+                var usuario = new List<Usuario>(id);
+                return Ok(usuario);
+                //atualizar foto cadastro no repositorio usuario
+                //chamar metodo foto cadastro passando nomearquivo
+                var s3Object = new Amazon.Rekognition.Model.S3Object()
+                {
+                    Bucket = "imagem-Aulas",
+                    Name = nomeArquivo
+                };
+                //chamar metodo foto cadastro passando nomearquivo
+
+                //atualizar imagem
+                /*await imagem.CopyToAsync(memoryStream);*/
+
+                
+
+
+                return Ok("imagem confirmada para cadastro");
             }
             else
             {
-                return BadRequest("Imagem Invalido com cadastro");
+                await _amazonS3.DeleteObjectAsync("imagem-aulas", nomeArquivo);
+                return BadRequest("Imagem Invalido para cadastro");
             }
         }
 
-       private async Task<bool> ValidarImagem(string nomeArquivoS3, IFormFile fotoLogin)
+       private async Task<bool> ValidarImagem(string nomeArquivoS3)
         {
             using (var memoryStream = new MemoryStream())
             {
-                var request = new CompareFacesRequest();
-                var requestSource = new Image()
+                var entrada = new DetectFacesRequest();
+                var imagem = new Image();
+
+                var s3Object = new Amazon.Rekognition.Model.S3Object()
                 {
-                    S3Object = new Amazon.Rekognition.Model.S3Object()
-                    {
-                        Bucket = "registro",
-                        Name = nomeArquivoS3
-                    }
+                    Bucket = "imagem-aulas",
+                    Name = nomeArquivoS3
                 };
 
-
-                await fotoLogin.CopyToAsync(memoryStream);
-                var requestTarget = new Image()
-                {
-                    Bytes = memoryStream
-                };
-
-                request.SourceImage = requestSource;
-                request.TargetImage = requestTarget;
-
-                var response = await _rekognitionClient.CompareFacesAsync(request);
-                if (response.FaceMatches.Count == 1 && response.FaceMatches.First().Similarity >= 80)
+                imagem.S3Object = s3Object;
+                entrada.Image = imagem;
+                entrada.Attributes = new List<string>(){"ALL"};
+            
+                var resposta = await _rekognitionClient.DetectFacesAsync(entrada);
+            
+                if(resposta.FaceDetails.Count == 1 && resposta.FaceDetails.First().Eyeglasses.Value == false)
                 {
                     return true;
                 }
-                return false;
+                else
+                {
+                    return false;
+                }
+
             }
         }
 
@@ -117,7 +133,7 @@ namespace ProjetoAws.Web.Controllers
 
                 var request = new PutObjectRequest();
                 request.Key = "reconhecimento" + imagem.FileName;
-                request.BucketName = "Registro";
+                request.BucketName = "imagem-aulas";
                 request.InputStream = streamDaImagem;
                 
                 var resposta = await _amazonS3.PutObjectAsync(request);
@@ -127,7 +143,7 @@ namespace ProjetoAws.Web.Controllers
 
        
 
-        [HttpPut]
+        [HttpPut("Alterar")]
         public async Task<IActionResult> Alterar(int id, string senha)
         {
             await _repositorio.AlterarSenhaAsync(id, senha);
@@ -143,16 +159,16 @@ namespace ProjetoAws.Web.Controllers
         }
         
 
-        [HttpPost("Login email")]
+        [HttpGet("Login email")]        
 
-        private async Task<IActionResult> LoginPorEmail(string email, string senha)
+        public async Task<IActionResult> LoginPorEmail(string email, string senha)
         {
             var usuario = await _repositorio.BuscarUsuarioPorEmail(email);
-            var confirmacao = await ConferenciaSenha(usuario , senha);
+            var confirmacao = await ConferirSenha(usuario , senha);
 
             if(confirmacao)
             {
-                return Ok(usuario.Id);
+                return Ok(usuario);
             }
             else
             {
@@ -161,7 +177,7 @@ namespace ProjetoAws.Web.Controllers
         } 
     
            
-        private async Task<bool> ConferenciaSenha(Usuario usuario, string senha)
+        private async Task<bool> ConferirSenha(Usuario usuario, string senha)
         {
             
             if (usuario.Senha == senha)
@@ -184,7 +200,7 @@ namespace ProjetoAws.Web.Controllers
                 {
                     S3Object = new Amazon.Rekognition.Model.S3Object()
                     {
-                        Bucket = "imagem-Aulas",
+                        Bucket = "imagem-aulas",
                         Name = nomeArquivoS3
                     }
                 };

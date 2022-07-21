@@ -26,7 +26,7 @@ namespace Curso.ProjetoAWS.Data.Repositorios
             return await _context.Usuarios.AsNoTracking().FirstAsync(x => x.Email == email);
         }
 
-        public async Task<Usuario> SenhaUsuario(string email, string senha)
+        public async Task<Usuario> ConferirSenha(string usuario, string senha)
         {
             return await _context.Usuarios.AsNoTracking().FirstAsync(x => x.Senha == senha);
         }
