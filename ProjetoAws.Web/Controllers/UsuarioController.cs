@@ -56,30 +56,16 @@ namespace ProjetoAws.Web.Controllers
         }
 
         [HttpPost("Cadastro Imagem")]
-        public async Task<IActionResult> CadastroDeImagem(int id, IFormFile imagem)
+        public async Task<IActionResult> CadastroDeImagem(int id, IFormFile imagem, string UrlImagemCadastro)
         {
             var nomeArquivo = await SalvarNoS3(imagem);
             var imagemValida = await ValidarImagem(nomeArquivo);
             
             if(imagemValida)
-            {   //buscar usuario no banco pelo ID,
-                var usuario = new List<Usuario>(id);
-                return Ok(usuario);
+            {   
                 //atualizar foto cadastro no repositorio usuario
-                //chamar metodo foto cadastro passando nomearquivo
-                var s3Object = new Amazon.Rekognition.Model.S3Object()
-                {
-                    Bucket = "imagem-Aulas",
-                    Name = nomeArquivo
-                };
-                //chamar metodo foto cadastro passando nomearquivo
-
-                //atualizar imagem
-                /*await imagem.CopyToAsync(memoryStream);*/
-
-                
-
-
+                await _repositorio.AtualizarImagemAsync(UrlImagemCadastro, nomeArquivo);
+              
                 return Ok("imagem confirmada para cadastro");
             }
             else
@@ -159,7 +145,7 @@ namespace ProjetoAws.Web.Controllers
         }
         
 
-        [HttpGet("Login email")]        
+        [HttpPost("Login email")]        
 
         public async Task<IActionResult> LoginPorEmail(string email, string senha)
         {
@@ -172,14 +158,13 @@ namespace ProjetoAws.Web.Controllers
             }
             else
             {
-                return BadRequest("Login e senha não são de cadastro");
+                return BadRequest("Senha não cadastro ou incorreta");
             }
         } 
     
            
         private async Task<bool> ConferirSenha(Usuario usuario, string senha)
         {
-            
             if (usuario.Senha == senha)
             {
                 return true;

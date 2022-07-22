@@ -30,10 +30,11 @@ namespace Curso.ProjetoAWS.Data.Repositorios
         {
             return await _context.Usuarios.AsNoTracking().FirstAsync(x => x.Senha == senha);
         }
-        public async Task AtualizarImagemAsync(int id)
+        public async Task AtualizarImagemAsync(string UrlImagemCadastro, string imagem)
         {
-            await _context.Usuarios.AsNoTracking().FirstAsync(x => x.Id == id);
+            await _context.Usuarios.FirstAsync(x=> x.UrlImagemCadastro == imagem);
         }
+        
 
         
     }       
