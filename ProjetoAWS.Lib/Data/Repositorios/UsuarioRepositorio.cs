@@ -30,9 +30,18 @@ namespace Curso.ProjetoAWS.Data.Repositorios
         {
             return await _context.Usuarios.AsNoTracking().FirstAsync(x => x.Senha == senha);
         }
-        public async Task AtualizarImagemAsync(string UrlImagemCadastro, string imagem)
+        public async Task AtualizarImagemAsync(int id, string UrlImagemCadastro)
         {
-            await _context.Usuarios.FirstAsync(x=> x.UrlImagemCadastro == imagem);
+            var usuario = await _context.Usuarios.FirstAsync(x=> x.Id == id);
+            usuario.SetUrlImagemCadastro(UrlImagemCadastro);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task ComparandoRostoAsync( int id, string fotoLogin)
+        {
+            var usuario = await _context.Usuarios.FirstAsync(x => x.Id == id);
+            usuario.SetUrlImagemCadastro(fotoLogin);
+            await _context.SaveChangesAsync();
         }
         
 

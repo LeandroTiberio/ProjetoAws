@@ -56,7 +56,7 @@ namespace ProjetoAws.Web.Controllers
         }
 
         [HttpPost("Cadastro Imagem")]
-        public async Task<IActionResult> CadastroDeImagem(int id, IFormFile imagem, string UrlImagemCadastro)
+        public async Task<IActionResult> CadastroDeImagem(int id, IFormFile imagem)
         {
             var nomeArquivo = await SalvarNoS3(imagem);
             var imagemValida = await ValidarImagem(nomeArquivo);
@@ -64,7 +64,7 @@ namespace ProjetoAws.Web.Controllers
             if(imagemValida)
             {   
                 //atualizar foto cadastro no repositorio usuario
-                await _repositorio.AtualizarImagemAsync(UrlImagemCadastro, nomeArquivo);
+                await _repositorio.AtualizarImagemAsync(id, nomeArquivo);
               
                 return Ok("imagem confirmada para cadastro");
             }
@@ -122,7 +122,7 @@ namespace ProjetoAws.Web.Controllers
                 request.BucketName = "imagem-aulas";
                 request.InputStream = streamDaImagem;
                 
-                var resposta = await _amazonS3.PutObjectAsync(request);
+                await _amazonS3.PutObjectAsync(request);
                 return request.Key;
             }
         }
@@ -154,11 +154,11 @@ namespace ProjetoAws.Web.Controllers
 
             if(confirmacao)
             {
-                return Ok(usuario);
+                return Ok(usuario.Id);
             }
             else
             {
-                return BadRequest("Senha não cadastro ou incorreta");
+                return BadRequest("Senha não cadastro ou invalida");
             }
         } 
     
@@ -176,20 +176,23 @@ namespace ProjetoAws.Web.Controllers
 
         [HttpPost("comparar rosto")]
         
-        public async Task<bool> CompararRostoAsync(string nomeArquivoS3, IFormFile fotoLogin)
+        public async Task<IActionResult> CompararRostoAsync(int id, IFormFile fotoLogin)
         { 
             using (var memoryStream = new MemoryStream())
             {
+
                 var request = new CompareFacesRequest();
+                var usuario = await _repositorio.BuscarPorIdAsync(id);
                 var requestsourceImagem = new Image()
+                
                 {
                     S3Object = new Amazon.Rekognition.Model.S3Object()
                     {
                         Bucket = "imagem-aulas",
-                        Name = nomeArquivoS3
+                        Name = usuario.GetUrlImagemCadastro()
                     }
                 };
-                    
+                
                 await fotoLogin.CopyToAsync(memoryStream);
 
                 var requesttargetImagem = new Image()
@@ -200,7 +203,7 @@ namespace ProjetoAws.Web.Controllers
                 request.TargetImage = requesttargetImagem;
 
                 var resposta = await _rekognitionClient.CompareFacesAsync(request);
-                return true;
+                return Ok(resposta);
             }
         }
     }

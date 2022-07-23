@@ -8,7 +8,9 @@ namespace Curso.ProjetoAWS.Lib.Data.Repositorios.Interface
 
         public Task<Usuario> BuscarUsuarioPorEmail (string email);
 
-        public Task AtualizarImagemAsync(string UrlImagemCadastro, string imagem);
+        public Task AtualizarImagemAsync(int id, string UrlImagemCadastro);
         public Task<Usuario> ConferirSenha(string usuario, string senha);
+
+        public Task ComparandoRostoAsync( int id, string fotoLogin);
     }
 }
