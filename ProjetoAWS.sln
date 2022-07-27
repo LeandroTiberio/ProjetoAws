@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjetoAWS.Lib", "ProjetoAW
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjetoAws.Web", "ProjetoAws.Web\ProjetoAws.Web.csproj", "{D312C6B1-EF47-472C-A560-BBD43CEE0361}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjetoAWS.Application", "ProjetoAWS.Application\ProjetoAWS.Application.csproj", "{ABAD388E-4DC0-4D23-8E10-DC4D5DC346BE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{D312C6B1-EF47-472C-A560-BBD43CEE0361}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D312C6B1-EF47-472C-A560-BBD43CEE0361}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D312C6B1-EF47-472C-A560-BBD43CEE0361}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABAD388E-4DC0-4D23-8E10-DC4D5DC346BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABAD388E-4DC0-4D23-8E10-DC4D5DC346BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABAD388E-4DC0-4D23-8E10-DC4D5DC346BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABAD388E-4DC0-4D23-8E10-DC4D5DC346BE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

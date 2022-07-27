@@ -1,76 +1,71 @@
-using Microsoft.AspNetCore.Mvc;
-using ProjetoAWS.Lib.Models;
-using Curso.ProjetoAWS.Lib.Data.Repositorios.Interface;
-using ProjetoAWS.Lib.Exceptions;
-using Amazon.S3;
 using Amazon.Rekognition;
-using Amazon.S3.Model;
 using Amazon.Rekognition.Model;
+using Amazon.S3;
+using Amazon.S3.Model;
+using Curso.ProjetoAWS.Lib.Data.Repositorios.Interface;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using ProjetoAWS.Application.DTOs;
-using ProjetoAWS.Application.Services;
+using ProjetoAWS.Lib.Exceptions;
+using ProjetoAWS.Lib.Models;
 
-namespace ProjetoAws.Web.Controllers
+namespace ProjetoAWS.Application.Services
 {
-    [ApiController]
-    [Route("[controller]")]
-    public class UsuarioController : ControllerBase 
+    
+    public class UsuarioApplication
     {
-        private readonly IUsuarioApplication _application;
         
+        private readonly IUsuarioRepositorio _repositorio;
+        private readonly IAmazonS3 _amazonS3;
+        private readonly AmazonRekognitionClient _rekognitionClient;
         private static readonly List<string> _extensoesImagem = new List<string>(){"image/jpeg", "image/jpg", "image/png"};
         public static List<Usuario> ListaUsuarios { get; set; } = new List<Usuario>();
-        public UsuarioController(IUsuarioApplication application )
+        public UsuarioApplication(IUsuarioRepositorio repositorio, IAmazonS3 amazonS3, AmazonRekognitionClient rekognitionClient)
         {
-            //_repositorio = repositorio;
-            //_amazonS3 = amazonS3;
-            //_rekognitionClient = rekognitionClient;
-            _application = application;
-            
+            _repositorio = repositorio;
+            _amazonS3 = amazonS3;
+            _rekognitionClient = rekognitionClient;
         }
 
-        [HttpGet("Todos")]
         public async Task<List<Usuario>> BuscarTodosAsync()
-        {
-            return await _application.BuscarTodosAsync();
+        {   
+            return await _repositorio.BuscarTodosAsync();
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> BuscarUsuarioId(int id)
+        public async Task<Usuario> BuscarUsuarioId(int id)
         {
-            return Ok(await _application.   BuscarPorIdAsync(id));
+            return (await _repositorio.BuscarPorIdAsync(id));
         }
 
-        [HttpPost]
-        public async Task<int> AdicionarUsuarioAsync(UsuarioDTO usuarioDTO)
+        public async Task<Usuario> AdicionarUsuario(UsuarioDTO usuarioDTO)
         {
             try
             {
                 var usuario = new Usuario(usuarioDTO.Id, usuarioDTO.Nome, usuarioDTO.Cpf, usuarioDTO.Email, usuarioDTO.Senha,
                                     usuarioDTO.DataNascimento, usuarioDTO.UrlImagemCadastro, usuarioDTO.DataCriacao);
-                await _application.AdicionarUsuarioAsync(usuario);
-                throw new Exception ("Usuario Adicionado");
+                await _repositorio.AdicionarUsuarioAsync(usuario);
+                return (usuario);
             }
-            catch (ErroDeValidacaoException)
+            catch (ErroDeValidacaoException ex)
             {
-                throw new Exception ("Usuario Não Adicionado");
+                return BadRequest(ex.Message);
             }
         }
 
-        [HttpPost("Cadastro Imagem")]
         public async Task CadastroDeImagem(int id, IFormFile imagem)
         {
             try
             {
                 //chamada do metodo na application
-                var imagemCadastro = await _application.CadastroDeImagem(int id, IFormFile imagem);
+                var imagemCadastro = await _repositorio.CadastroDeImagem(int id, IFormFile imagem);
                 //return ok com o resultado
-                return Ok(imagemCadastro);
+                return Ok("Cadastro de imagem com sucesso");
             }
-            catch (ErroDeValidacaoException)
+            catch (ErroDeValidacaoException ex)
             {
-                throw new Exception ("Cadastro de imagem com sucesso"); 
+                return BadRequest(ex.Message);
             }
-        }    
+        }   
         
         private async Task<bool> ValidarImagem(string nomeArquivoS3)
         {
@@ -125,28 +120,23 @@ namespace ProjetoAws.Web.Controllers
         }
 
        
-
-        [HttpPut("Alterar")]
-        public async Task<IActionResult> AlterarSenha(int id, string senha)
+        public async Task<Usuario> AlterarSenha(int id, string senha)
         {
-            await _application.AlterarSenhaAsync(id, senha);
+            await _repositorio.AlterarSenhaAsync(id, senha);
             return Ok("Senha alteradada!");
         }
 
-        [HttpDelete("{id}")]
 
-        public async Task<IActionResult> DeletarPorId(int id)
+        public async Task<Usuario> DeletarPorId(int id)
         {
-            await _application.DeletarAsync(id);
+            await _repositorio.DeletarAsync(id);
             return Ok("Usuario removido");
         }
-        
-
-        [HttpPost("Login email")]        
+            
 
         public async Task<IActionResult> LoginPorEmail(string email, string senha)
         {
-            var usuario = await _application.BuscarUsuarioPorEmail(email);
+            var usuario = await _repositorio.BuscarUsuarioPorEmail(email);
             var confirmacao = await ConferirSenha(usuario , senha);
 
             if(confirmacao)
@@ -169,9 +159,6 @@ namespace ProjetoAws.Web.Controllers
             return false;
         }
 
-
-
-        [HttpPost("comparar rosto")]
         
         public async Task<IActionResult> CompararRostoAsync(int id, IFormFile fotoLogin)
         { 
@@ -179,7 +166,7 @@ namespace ProjetoAws.Web.Controllers
             {
 
                 var request = new CompareFacesRequest();
-                var usuario = await _application.BuscarPorIdAsync(id);
+                var usuario = await _repositorio.BuscarPorIdAsync(id);
                 var requestsourceImagem = new Image()
                 
                 {
@@ -203,6 +190,8 @@ namespace ProjetoAws.Web.Controllers
                 return Ok(resposta);
             }
         }
+
+        
+
     }
 }
-
