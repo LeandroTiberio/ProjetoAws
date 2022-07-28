@@ -67,7 +67,7 @@ namespace ProjetoAWS.Application.Services
             }
         }   
         
-        private async Task<bool> ValidarImagem(string nomeArquivoS3)
+        private async Task<Usuario> ValidarImagem(string nomeArquivoS3)
         {
             using (var memoryStream = new MemoryStream())
             {

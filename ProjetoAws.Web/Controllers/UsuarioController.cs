@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ProjetoAWS.Lib.Models;
-using Curso.ProjetoAWS.Lib.Data.Repositorios.Interface;
 using ProjetoAWS.Lib.Exceptions;
-using Amazon.S3;
-using Amazon.Rekognition;
 using Amazon.S3.Model;
 using Amazon.Rekognition.Model;
 using ProjetoAWS.Application.DTOs;
@@ -21,11 +18,7 @@ namespace ProjetoAws.Web.Controllers
         public static List<Usuario> ListaUsuarios { get; set; } = new List<Usuario>();
         public UsuarioController(IUsuarioApplication application )
         {
-            //_repositorio = repositorio;
-            //_amazonS3 = amazonS3;
-            //_rekognitionClient = rekognitionClient;
             _application = application;
-            
         }
 
         [HttpGet("Todos")]
@@ -37,7 +30,7 @@ namespace ProjetoAws.Web.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> BuscarUsuarioId(int id)
         {
-            return Ok(await _application.   BuscarPorIdAsync(id));
+            return Ok(await _application.BuscarPorIdAsync(id));
         }
 
         [HttpPost]
@@ -62,9 +55,7 @@ namespace ProjetoAws.Web.Controllers
             try
             {
                 //chamada do metodo na application
-                var imagemCadastro = await _application.CadastroDeImagem(int id, IFormFile imagem);
-                //return ok com o resultado
-                return Ok(imagemCadastro);
+                await _application.CadastroDeImagem(id, imagem);
             }
             catch (ErroDeValidacaoException)
             {
@@ -72,60 +63,31 @@ namespace ProjetoAws.Web.Controllers
             }
         }    
         
-        private async Task<bool> ValidarImagem(string nomeArquivoS3)
+        public async Task<Usuario> ValidarImagem(string nomeArquivoS3)
         {
-            using (var memoryStream = new MemoryStream())
+            try
             {
-                var entrada = new DetectFacesRequest();
-                var imagem = new Image();
-
-                var s3Object = new Amazon.Rekognition.Model.S3Object()
-                {
-                    Bucket = "imagem-aulas",
-                    Name = nomeArquivoS3
-                };
-
-                imagem.S3Object = s3Object;
-                entrada.Image = imagem;
-                entrada.Attributes = new List<string>(){"ALL"};
-            
-                var resposta = await _rekognitionClient.DetectFacesAsync(entrada);
-            
-                if(resposta.FaceDetails.Count == 1 && resposta.FaceDetails.First().Eyeglasses.Value == false)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-
+                await _application.ValidarImagem(nomeArquivoS3);
+            }
+            catch(ErroDeValidacaoException)
+            {
+                throw new Exception ("Imagem não valida");
             }
         }
 
-
-        private async Task<string> SalvarNoS3(IFormFile imagem)
+        public async Task<string> SalvarNoS3(IFormFile imagem)
         {
-            if(!_extensoesImagem.Contains(imagem.ContentType))
+            try
             {
-                throw  new Exception("Tipo Invalido de imagem");
+                await _application.SalvarNoS3(imagem);
             }
-            using (var streamDaImagem = new MemoryStream())
-            {  
-                await imagem.CopyToAsync(streamDaImagem);  
-
-                var request = new PutObjectRequest();
-                request.Key = "reconhecimento" + imagem.FileName;
-                request.BucketName = "imagem-aulas";
-                request.InputStream = streamDaImagem;
-                
-                await _amazonS3.PutObjectAsync(request);
-                return request.Key;
+            catch(ErroDeValidacaoException)
+            {
+                throw new Exception ("Foto não salva");
             }
+            
         }
-
-       
-
+     
         [HttpPut("Alterar")]
         public async Task<IActionResult> AlterarSenha(int id, string senha)
         {
@@ -137,72 +99,54 @@ namespace ProjetoAws.Web.Controllers
 
         public async Task<IActionResult> DeletarPorId(int id)
         {
-            await _application.DeletarAsync(id);
+            await _application.DeletarPorIdAsync(id);
             return Ok("Usuario removido");
         }
         
 
         [HttpPost("Login email")]        
 
-        public async Task<IActionResult> LoginPorEmail(string email, string senha)
+        public async Task<bool> LoginPorEmail(string email, string senha)
         {
-            var usuario = await _application.BuscarUsuarioPorEmail(email);
-            var confirmacao = await ConferirSenha(usuario , senha);
-
-            if(confirmacao)
+            try
             {
-                return Ok(usuario.Id);
+               await _application.LoginPorEmail(email, senha); 
             }
-            else
+            catch(ErroDeValidacaoException)
             {
-                return BadRequest("Senha não cadastro ou invalida");
+                throw new Exception("Email ou senha incorreto vereficar dados");
             }
-        } 
-    
-           
-        private async Task<bool> ConferirSenha(Usuario usuario, string senha)
+        }
+     
+        public async Task<bool> CoferirSenha(Usuario usuario, string senha)
         {
-            if (usuario.Senha == senha)
+            try
             {
-                return true;
+                await _application.ConferirSenha(usuario, senha);
             }
-            return false;
+            catch(ErroDeValidacaoException)
+            {
+                throw new Exception ("Usuario não confere com a senha rever dados");
+            }
         }
 
 
 
         [HttpPost("comparar rosto")]
         
-        public async Task<IActionResult> CompararRostoAsync(int id, IFormFile fotoLogin)
-        { 
-            using (var memoryStream = new MemoryStream())
+        public async Task<bool> CompararRostoAsync(int id, IFormFile fotoLogin)
+        {
+            try
             {
-
-                var request = new CompareFacesRequest();
-                var usuario = await _application.BuscarPorIdAsync(id);
-                var requestsourceImagem = new Image()
-                
-                {
-                    S3Object = new Amazon.Rekognition.Model.S3Object()
-                    {
-                        Bucket = "imagem-aulas",
-                        Name = usuario.GetUrlImagemCadastro()
-                    }
-                };
-                
-                await fotoLogin.CopyToAsync(memoryStream);
-
-                var requesttargetImagem = new Image()
-                {
-                    Bytes = memoryStream
-                };
-                request.SourceImage = requestsourceImagem;  
-                request.TargetImage = requesttargetImagem;
-
-                var resposta = await _rekognitionClient.CompareFacesAsync(request);
-                return Ok(resposta);
+                await _application.CompararRostoAsync(id, fotoLogin);
+            }
+            catch(ErroDeValidacaoException)
+            {
+                throw new Exception ("Foto não cofere com banco de dados");
             }
         }
+
+ 
     }
 }
 
