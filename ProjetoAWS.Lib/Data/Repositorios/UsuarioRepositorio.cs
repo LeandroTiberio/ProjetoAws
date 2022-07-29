@@ -3,6 +3,7 @@ using ProjetoAWS.Lib.Models;
 
 using Microsoft.EntityFrameworkCore;
 using ProjetoAWS.Lib.Data;
+using Microsoft.AspNetCore.Http;
 
 namespace Curso.ProjetoAWS.Data.Repositorios
 {
@@ -26,7 +27,7 @@ namespace Curso.ProjetoAWS.Data.Repositorios
             return await _context.Usuarios.AsNoTracking().FirstAsync(x => x.Email == email);
         }
 
-        public async Task<Usuario> ConferirSenha(string usuario, string senha)
+        public async Task<Usuario> ConferirSenha(Usuario usuario, string senha)
         {
             return await _context.Usuarios.AsNoTracking().FirstAsync(x => x.Senha == senha);
         }
@@ -41,6 +42,12 @@ namespace Curso.ProjetoAWS.Data.Repositorios
         {
             var usuario = await _context.Usuarios.FirstAsync(x => x.Id == id);
             usuario.SetUrlImagemCadastro(fotoLogin);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task CadastroDeImagem(int id, IFormFile imagem)
+        {
+            var usuario = await _context.Usuarios.FirstAsync(x => x.Id ==id);
             await _context.SaveChangesAsync();
         }
         

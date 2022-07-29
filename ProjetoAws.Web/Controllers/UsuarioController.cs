@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ProjetoAWS.Lib.Models;
 using ProjetoAWS.Lib.Exceptions;
-using Amazon.S3.Model;
-using Amazon.Rekognition.Model;
 using ProjetoAWS.Application.DTOs;
 using ProjetoAWS.Application.Services;
 
@@ -38,9 +36,7 @@ namespace ProjetoAws.Web.Controllers
         {
             try
             {
-                var usuario = new Usuario(usuarioDTO.Id, usuarioDTO.Nome, usuarioDTO.Cpf, usuarioDTO.Email, usuarioDTO.Senha,
-                                    usuarioDTO.DataNascimento, usuarioDTO.UrlImagemCadastro, usuarioDTO.DataCriacao);
-                await _application.AdicionarUsuarioAsync(usuario);
+                await _application.AdicionarUsuarioAsync(usuarioDTO);
                 throw new Exception ("Usuario Adicionado");
             }
             catch (ErroDeValidacaoException)
@@ -56,18 +52,20 @@ namespace ProjetoAws.Web.Controllers
             {
                 //chamada do metodo na application
                 await _application.CadastroDeImagem(id, imagem);
+                throw new Exception ("Cadastro de imagem com sucesso");
             }
             catch (ErroDeValidacaoException)
             {
-                throw new Exception ("Cadastro de imagem com sucesso"); 
+                throw new Exception ("Erro ao cadastra imagem tente novamente"); 
             }
         }    
         
-        public async Task<Usuario> ValidarImagem(string nomeArquivoS3)
+        public async Task ValidarImagem(string nomeArquivoS3)
         {
             try
             {
                 await _application.ValidarImagem(nomeArquivoS3);
+                throw new Exception ("Imagem salva com sucesse");
             }
             catch(ErroDeValidacaoException)
             {
@@ -75,15 +73,16 @@ namespace ProjetoAws.Web.Controllers
             }
         }
 
-        public async Task<string> SalvarNoS3(IFormFile imagem)
+        public async Task SalvarNoS3(IFormFile imagem)
         {
             try
             {
                 await _application.SalvarNoS3(imagem);
+                throw new Exception ("Foto salva com sucesso");
             }
             catch(ErroDeValidacaoException)
             {
-                throw new Exception ("Foto não salva");
+                throw new Exception ("Foto foi possível salva foto tente novamente");
             }
             
         }
@@ -106,19 +105,20 @@ namespace ProjetoAws.Web.Controllers
 
         [HttpPost("Login email")]        
 
-        public async Task<bool> LoginPorEmail(string email, string senha)
+        public async Task<IActionResult> LoginPorEmail(string email, string senha)
         {
             try
             {
-               await _application.LoginPorEmail(email, senha); 
+               return Ok (await _application.LoginPorEmail(email, senha)); 
+               
             }
-            catch(ErroDeValidacaoException)
+            catch(ErroDeValidacaoException ex)
             {
-                throw new Exception("Email ou senha incorreto vereficar dados");
+                return BadRequest (ex.Message);
             }
         }
      
-        public async Task<bool> CoferirSenha(Usuario usuario, string senha)
+        public async Task CoferirSenha(Usuario usuario, string senha)
         {
             try
             {
@@ -134,15 +134,16 @@ namespace ProjetoAws.Web.Controllers
 
         [HttpPost("comparar rosto")]
         
-        public async Task<bool> CompararRostoAsync(int id, IFormFile fotoLogin)
+        public async Task CompararRostoAsync(int id, IFormFile fotoLogin)
         {
             try
             {
                 await _application.CompararRostoAsync(id, fotoLogin);
+                
             }
             catch(ErroDeValidacaoException)
             {
-                throw new Exception ("Foto não cofere com banco de dados");
+                throw new Exception ("Foto não confere com banco de dados");
             }
         }
 
