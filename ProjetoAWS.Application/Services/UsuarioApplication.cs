@@ -10,15 +10,13 @@ using ProjetoAWS.Lib.Models;
 
 namespace ProjetoAWS.Application.Services
 {
-    
-    public class UsuarioApplication
+    public class UsuarioApplication : IUsuarioApplication
     {
-        
         private readonly IUsuarioRepositorio _repositorio;
         private readonly IAmazonS3 _amazonS3;
+        private static readonly List<string> _extensoesImagem =
+        new List<string>() { "image/jpeg", "image/png", "image/jpg"};
         private readonly AmazonRekognitionClient _rekognitionClient;
-        private static readonly List<string> _extensoesImagem = new List<string>(){"image/jpeg", "image/jpg", "image/png"};
-        public static List<Usuario> ListaUsuarios { get; set; } = new List<Usuario>();
         public UsuarioApplication(IUsuarioRepositorio repositorio, IAmazonS3 amazonS3, AmazonRekognitionClient rekognitionClient)
         {
             _repositorio = repositorio;
@@ -26,184 +24,140 @@ namespace ProjetoAWS.Application.Services
             _rekognitionClient = rekognitionClient;
         }
 
-        public async Task<List<Usuario>> BuscarTodosAsync()
-        {   
-            return await _repositorio.BuscarTodosAsync();
-        }
-
-        public async Task<Usuario> BuscarUsuarioId(int id)
+        public async Task<int> AdicionarUsuario(UsuarioDTO usuarioDTO)
         {
-            return (await _repositorio.BuscarPorIdAsync(id));
-        }
-
-        public async Task<Usuario> AdicionarUsuarioAsync(UsuarioDTO usuarioDTO)
-        {
-            try
-            {
-                var usuario = new Usuario(usuarioDTO.Id, usuarioDTO.Nome, usuarioDTO.Cpf, usuarioDTO.Email, usuarioDTO.Senha,
+            var usuario = new Usuario(usuarioDTO.Id, usuarioDTO.Nome, usuarioDTO.Cpf, usuarioDTO.Email, usuarioDTO.Senha,
                                     usuarioDTO.DataNascimento, usuarioDTO.UrlImagemCadastro, usuarioDTO.DataCriacao);
-                await _repositorio.AdicionarAsync (usuario);
-                return (usuario);
-                throw new Exception("Usuario adicionado");
-            }
-            catch (ErroDeValidacaoException)
-            {
-                throw new Exception ("Usuario não Adicionado");
-            }
+            await _repositorio.Adicionar(usuario);
+            return usuario.Id;
         }
-
-        public async Task<bool> CadastroDeImagem(int id, IFormFile imagem)
+        public async Task CadastrarImagem(int id, IFormFile imagem)
         {
             var nomeArquivo = await SalvarNoS3(imagem);
             var imagemValida = await ValidarImagem(nomeArquivo);
             if (imagemValida)
             {
-                await _repositorio.CadastroDeImagem(id, imagem);
-                return true;
+                await _repositorio.AtualizarUrlImagemCadastro(id, nomeArquivo);
             }
             else
             {
-                await _amazonS3.DeleteObjectAsync("imagem-aulas", nomeArquivo);
-                return false;
-            }
-        }   
-        
-        public async Task<bool> ValidarImagem(string nomeArquivoS3)
-        {
-            using (var memoryStream = new MemoryStream())
-            {
-                var entrada = new DetectFacesRequest();
-                var imagem = new Image();
-
-                var s3Object = new Amazon.Rekognition.Model.S3Object()
-                {
-                    Bucket = "imagem-aulas",
-                    Name = nomeArquivoS3
-                };
-
-                imagem.S3Object = s3Object;
-                entrada.Image = imagem;
-                entrada.Attributes = new List<string>(){"ALL"};
-            
-                var resposta = await _rekognitionClient.DetectFacesAsync(entrada);
-            
-                if(resposta.FaceDetails.Count == 1 && resposta.FaceDetails.First().Eyeglasses.Value == false)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-
+                var response = await _amazonS3.DeleteObjectAsync("imagens-aulas", nomeArquivo);
+                throw new ErroDeValidacaoException("Imagem inválida!");
             }
         }
-
-
-        public async Task<string> SalvarNoS3(IFormFile imagem)
+        private async Task<string> SalvarNoS3(IFormFile imagem)
         {
-            if(!_extensoesImagem.Contains(imagem.ContentType))
+            if (!_extensoesImagem.Contains(imagem.ContentType))
             {
-                throw  new Exception("Tipo Invalido de imagem");
+                throw new ErroDeValidacaoException("Tipo de foto inválido!");
             }
             using (var streamDaImagem = new MemoryStream())
-            {  
-                await imagem.CopyToAsync(streamDaImagem);  
-
+            {
+                await imagem.CopyToAsync(streamDaImagem);
                 var request = new PutObjectRequest();
                 request.Key = "reconhecimento" + imagem.FileName;
                 request.BucketName = "imagem-aulas";
                 request.InputStream = streamDaImagem;
-                
-                await _amazonS3.PutObjectAsync(request);
+
+                var resposta = await _amazonS3.PutObjectAsync(request);
                 return request.Key;
             }
         }
-
-       
-        public async Task<Usuario> AlterarSenha(int id, string senha)
+        private async Task<bool> ValidarImagem(string nomeArquivo)
         {
-            await _repositorio.AlterarSenhaAsync(id, senha);
-            throw new Exception ("Senha alteradada!");
-        }
+            var request = new DetectFacesRequest();
+            var imagem = new Image();
 
-
-        public async Task<Usuario> DeletarPorId(int id)
-        {
-            await _repositorio.DeletarAsync(id);
-            throw new Exception ("Usuario removido");
-        }
-            
-
-        public async Task<int> LoginPorEmail(string email, string senha)
-        {
-            var usuario = await _repositorio.BuscarUsuarioPorEmail(email);
-            var confirmacao = await ConferirSenha(usuario , senha);
-
-            if(confirmacao)
+            var s3Object = new Amazon.Rekognition.Model.S3Object()
             {
-                return usuario.Id;
-            }
-            else
-            {
-                throw new ErroDeValidacaoException ("Senha ou email invalida");
-            }
-        } 
-    
-           
-        private async Task<bool> ConferirSenha(Usuario usuario, string senha)
-        {
-            if (usuario.Senha == senha)
+                Bucket = "imagem-aulas",
+                Name = nomeArquivo
+
+            };
+
+            imagem.S3Object = s3Object;
+            request.Image = imagem;
+            request.Attributes = new List<string>() { "ALL" };
+
+            var response = await _rekognitionClient.DetectFacesAsync(request);
+
+            if (response.FaceDetails.Count == 1 && response.FaceDetails.First().Eyeglasses.Value == false)
             {
                 return true;
             }
             return false;
-            throw new ErroDeValidacaoException ("Usuario não confere com a senha rever dados");
         }
-
-        
-        public async Task<bool> CompararRostoAsync(int id, IFormFile fotoLogin)
-        { 
-            using (var memoryStream = new MemoryStream())
+        public async Task<List<Usuario>> BuscarTodos()
+        {
+            return await _repositorio.BuscarTodos();
+        }
+        public async Task<Usuario> BuscarUsuarioPorID(int id)
+        {
+            return await _repositorio.BuscarPorId(id);
+        }
+        public async Task<int> LoginEmail(string email, string senha)
+        {
+            var usuario = await _repositorio.BuscarPorEmail(email);
+            var validacao = await VerificarSenha(usuario, senha);
+            if (validacao)
             {
-
+                return usuario.Id;
+            }
+            throw new ErroDeValidacaoException("Senha invalida!");
+        }
+        private async Task<bool> VerificarSenha(Usuario usuario, string senha)
+        {
+            return usuario.Senha == senha;
+        }
+        public async Task LoginImagem(int id, IFormFile imagem)
+        {
+            var usuario = await _repositorio.BuscarPorId(id);
+            var verificacao = await VerificarImagem(usuario.UrlImagemCadastro, imagem);
+            if (verificacao == false)
+            {
+                throw new ErroDeValidacaoException("Face não compativel com cadastro!");
+            }
+        }
+        private async Task<bool> VerificarImagem(string nomeArquivoS3, IFormFile fotoLogin)
+        {
+            using (var memStream = new MemoryStream())
+            {
                 var request = new CompareFacesRequest();
-                var usuario = await _repositorio.BuscarPorIdAsync(id);
-                var requestsourceImagem = new Image()
-                
+
+                var requestSource = new Image()
                 {
                     S3Object = new Amazon.Rekognition.Model.S3Object()
                     {
                         Bucket = "imagem-aulas",
-                        Name = usuario.GetUrlImagemCadastro()
+                        Name = nomeArquivoS3
                     }
                 };
-                
-                await fotoLogin.CopyToAsync(memoryStream);
 
-                var requesttargetImagem = new Image()
+                await fotoLogin.CopyToAsync(memStream);
+                var requestTarget = new Image()
                 {
-                    Bytes = memoryStream
+                    Bytes = memStream
                 };
-                request.SourceImage = requestsourceImagem;  
-                request.TargetImage = requesttargetImagem;
 
+                request.SourceImage = requestSource;
+                request.TargetImage = requestTarget;
 
-                var resposta = await _rekognitionClient.CompareFacesAsync(request);
-
-                if(resposta.FaceMatches.Count == 1 && resposta.FaceMatches.First().Similarity == 90)
+                var response = await _rekognitionClient.CompareFacesAsync(request);
+                if (response.FaceMatches.Count == 1 && response.FaceMatches.First().Similarity >= 90)
                 {
                     return true;
                 }
-                else
-                {
-                    return false;
-                }
-                
+                return false;
             }
         }
-
-        
-
+        public async Task AtualizarEmailUsuarioPorId(int id, string email)
+        {
+            await _repositorio.AtualizarEmail(id, email);
+        }
+        public async Task DeletarPorId(int id)
+        {
+            await _repositorio.DeletarItemDesejado(id);
+        }
     }
+    
 }
