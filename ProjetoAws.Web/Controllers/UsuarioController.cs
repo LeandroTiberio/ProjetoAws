@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
-using ProjetoAws.Web.Controllers.DTOs;
 using ProjetoAWS.Lib.Models;
-
-using Curso.ProjetoAWS.Lib.Data.Repositorios.Interface;
 using ProjetoAWS.Lib.Exceptions;
+using ProjetoAWS.Application.DTOs;
+using ProjetoAWS.Application.Services;
+using Amazon.S3;
+using Amazon.Rekognition;
 
 namespace ProjetoAws.Web.Controllers
 {
@@ -11,59 +12,71 @@ namespace ProjetoAws.Web.Controllers
     [Route("[controller]")]
     public class UsuarioController : ControllerBase 
     {
-        private readonly IUsuarioRepositorio _repositorio;
-        public static List<Usuario> ListaUsuarios { get; set; } = new List<Usuario>();
-        public UsuarioController(IUsuarioRepositorio repositorio)
+        private readonly IUsuarioApplication _application;
+        private readonly IAmazonS3 _amazonS3;
+        private static readonly List<string> _extensoesImagem =
+        new List<string>() { "image/jpeg", "image/png", "image/jpg"};
+        private readonly AmazonRekognitionClient _rekognitionClient;
+        public UsuarioController(IUsuarioApplication application, IAmazonS3 amazonS3, AmazonRekognitionClient rekognitionClient )
         {
-            _repositorio = repositorio;
+            _application = application;
+            _amazonS3 = amazonS3;
+            _rekognitionClient = rekognitionClient;
         }
-
-        [HttpGet("Todos")]
-        public async Task<IActionResult> BuscarTodosAsync()
+        //UUDI - SQL / GUID - VISUAL STUDIO
+        [HttpPost()]
+        public async Task<IActionResult> AdicionarUsuario(UsuarioDTO usuarioDTO)
         {
-            return Ok(await _repositorio.BuscarTodosAsync());
+            var resposta = await _application.AdicionarUsuario(usuarioDTO);
+            return Ok(resposta);
         }
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetUsuarioId(int id)
+        [HttpPost("imagem")]
+        public async Task<IActionResult> CadastrarImagem(int id, IFormFile imagem)
         {
-            return Ok(await _repositorio.BuscarPorIdAsync(id));
+            await _application.CadastrarImagem(id, imagem);
+            return Ok();
         }
-
-        [HttpPost]
-        public async Task<IActionResult> Adicionar(UsuarioDTO usuarioDTO)
+        [HttpGet("todos")]
+        public async Task<IActionResult> BuscarTodos()
         {
-            try
-            {
-                var usuario = new Usuario(usuarioDTO.Id, usuarioDTO.Nome, usuarioDTO.Cpf, usuarioDTO.Email, usuarioDTO.Senha,
-                                    usuarioDTO.DataNascimento, usuarioDTO.UrlImagemCadastro, usuarioDTO.DataCriacao);
-                await _repositorio.AdicionarAsync(usuario);
-                return Ok(usuario);
-            }
-            catch (ErroDeValidacaoException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var resposta = await _application.BuscarTodos();
+            return Ok(resposta);
         }
-
-        [HttpPut]
-        public async Task<IActionResult> Alterar(int id, string senha)
+        [HttpGet("Id")]
+        public async Task<IActionResult> BuscarUsuarioPorID(int id)
         {
-            await _repositorio.AlterarSenhaAsync(id, senha);
-            return Ok("Senha alteradada!");
+            var resposta = await _application.BuscarUsuarioPorID(id);
+            return Ok(resposta);
         }
-
-        [HttpDelete("{id}")]
-
-        public async Task<IActionResult> DeletarPorId(int id)
+        [HttpGet("LoginEmail")]
+        public async Task<IActionResult> LoginEmail(string email, string senha)
         {
-            await _repositorio.DeletarAsync(id);
-            return Ok("Usuario removido");
+            var resposta = await _application.LoginEmail(email, senha);
+            return Ok(resposta);
         }
-
-
+        [HttpPost("LoginImagem")]
+        public async Task<IActionResult> LoginImagem(int id, IFormFile imagem)
+        {
+            await _application.LoginImagem(id, imagem);
+            return Ok();
+        }
+        [HttpPut("Email")]
+        public async Task<IActionResult> AtualizarEmailUsuarioPorId(int id, string email)
+        {
+            await _application.AtualizarEmailUsuarioPorId(id, email);
+            return Ok();
+        }
+        [HttpDelete()]
+        public async Task<IActionResult> DeletarUsuarioPorId(int id)
+        {
+            await _application.DeletarPorId(id);
+            return Ok();
+        }
     }
-
-
 }
+
+
+
+
+        
 

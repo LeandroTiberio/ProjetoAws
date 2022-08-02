@@ -9,7 +9,7 @@ namespace ProjetoAws.Web.Controllers
     public class ImagensController : ControllerBase
     {
         private readonly IAmazonS3 _amazonS3;
-        private static readonly List<string> _extensoesImagem = new List<string>(){"imagejpeg", "imagepng"};
+        private static readonly List<string> _extensoesImagem = new List<string>(){"image/jpeg", "image/jpg", "image/png"};
         public ImagensController(IAmazonS3 amazonS3)
         {
             _amazonS3 = amazonS3;
@@ -28,14 +28,14 @@ namespace ProjetoAws.Web.Controllers
 
                 var request = new PutObjectRequest();
                 request.Key = "reconhecimento" + imagem.FileName;
-                request.BucketName = "imagem-Aulas";
+                request.BucketName = "imagem-aulas";
                 request.InputStream = streamDaImagem;
                 
                 var resposta = await _amazonS3.PutObjectAsync(request);
                 return Ok(resposta);
             }
             
-        }
+        }                                           
 
         [HttpDelete]
         public async Task<IActionResult> DeletarImagem(string nomeArquivoNoS3)

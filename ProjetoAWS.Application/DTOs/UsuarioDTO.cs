@@ -1,4 +1,4 @@
-namespace ProjetoAws.Web.Controllers.DTOs
+namespace ProjetoAWS.Application.DTOs
 {
     public class UsuarioDTO
     {

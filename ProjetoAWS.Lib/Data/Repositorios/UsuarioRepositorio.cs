@@ -3,24 +3,42 @@ using ProjetoAWS.Lib.Models;
 
 using Microsoft.EntityFrameworkCore;
 using ProjetoAWS.Lib.Data;
+using Microsoft.AspNetCore.Http;
 
 namespace Curso.ProjetoAWS.Data.Repositorios
 {
     public class UsuarioRepositorio : RepositorioBase<Usuario>, IUsuarioRepositorio
     {
-        private readonly ProjetoAWSContext _context;
-
         public UsuarioRepositorio(ProjetoAWSContext context) : base(context, context.Usuarios)
         {
-            _context = context;
-            
+
         }
-        public async Task AlterarSenhaAsync(int id, string senha)
+        public async Task AtualizarEmail(int id, string email)
         {
-            var item = await _context.Usuarios.FirstAsync(x => x.Id == id);
-            item.SetSenha(senha);
+            await _context.Usuarios.FirstAsync(x => x.Email == email);
             await _context.SaveChangesAsync();
             
         }
+        public async Task AtualizarUrlImagemCadastro(int id, string urlAtualizada)
+        {
+            await _context.Usuarios.FirstAsync(x => x.Id == id);
+            await _context.SaveChangesAsync();
+        }
+        public async Task<Usuario> BuscarPorEmail(string email)
+        {
+            return await _dbSet.AsNoTracking().FirstAsync(x => x.Email == email);
+        }
     }
-}
+} 
+        
+        
+
+       
+        
+        
+        
+        
+       
+
+        
+    

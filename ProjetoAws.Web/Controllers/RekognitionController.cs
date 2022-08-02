@@ -16,7 +16,7 @@ namespace ProjetoAws.Web.Controllers
         }
 
         [HttpPost("Comparar")]
-        public async Task<IActionResult> CompararRosto(string nomeArquivoS3, IFormFile fotoLogin)
+        public async Task<IActionResult> CompararRostoAsync(string nomeArquivoS3, IFormFile fotoLogin)
         { 
             using (var memoryStream = new MemoryStream())
             {
@@ -25,7 +25,7 @@ namespace ProjetoAws.Web.Controllers
                 {
                     S3Object = new S3Object()
                     {
-                        Bucket = "imagem-Aulas",
+                        Bucket = "imagem-aulas",
                         Name = nomeArquivoS3
                     }
                 };
@@ -46,7 +46,7 @@ namespace ProjetoAws.Web.Controllers
         }
                 
         [HttpGet]
-        public async Task<IActionResult> AnalisarRosto(string nomeArquivo)
+        public async Task<IActionResult> AnalisarRostoAsync(string nomeArquivo)
         {
             var entrada = new DetectFacesRequest();
             var imagem = new Image();

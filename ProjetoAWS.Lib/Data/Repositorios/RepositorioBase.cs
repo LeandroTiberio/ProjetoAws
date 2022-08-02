@@ -7,32 +7,45 @@ namespace Curso.ProjetoAWS.Data.Repositorios
 {
     public class RepositorioBase<T> : IRepositorioBase<T> where T : ModelBase
     {
-        private readonly ProjetoAWSContext _context;
-        private readonly DbSet<T> _dbset;
-        public RepositorioBase(ProjetoAWSContext dbContext, DbSet<T> dbset)
+        
+        protected readonly ProjetoAWSContext _context;
+        protected readonly DbSet<T> _dbSet;
+        public RepositorioBase(ProjetoAWSContext context, DbSet<T> dbSet)
         {
-            _context = dbContext;
-            _dbset = dbset;
+            _context = context;
+            _dbSet = dbSet;
         }
-        public async Task<List<T>> BuscarTodosAsync()
+
+        public async Task Adicionar(T item)
         {
-            return await _dbset.AsNoTracking().ToListAsync();
-        }
-        public async Task<T> BuscarPorIdAsync(int id)
-        {
-            return await _dbset.AsNoTracking().FirstAsync(x => x.Id == id);
-        }
-        public async Task AdicionarAsync(T item)
-        {
-            await _dbset.AddAsync(item);
+            await _dbSet.AddAsync(item);
             await _context.SaveChangesAsync();
         }
-       
-         public async Task DeletarAsync(int id)
+
+        public async Task<T> BuscarPorId(int id)
         {
-            var item = await _dbset.AsNoTracking().FirstAsync(x => x.Id == id);
-            _dbset.Remove(item);
+            //First = primeiro que tenha mesmo id
+            return await _dbSet.AsNoTracking().FirstAsync(x => x.Id == id);
+        }
+
+        public async Task<List<T>> BuscarTodos()
+        {
+            return await _dbSet.AsNoTracking().ToListAsync();
+        }
+
+        public async Task DeletarItemDesejado(int id)
+        {
+            //Find = achar pelo id
+            var itemARemover = await _dbSet.FindAsync(id);
+            _dbSet.Remove(itemARemover);
             await _context.SaveChangesAsync();
         }
+        
+
     }
 }
+
+
+
+       
+       
