@@ -3,6 +3,8 @@ using ProjetoAWS.Lib.Models;
 using ProjetoAWS.Lib.Exceptions;
 using ProjetoAWS.Application.DTOs;
 using ProjetoAWS.Application.Services;
+using Amazon.S3;
+using Amazon.Rekognition;
 
 namespace ProjetoAws.Web.Controllers
 {
@@ -11,11 +13,17 @@ namespace ProjetoAws.Web.Controllers
     public class UsuarioController : ControllerBase 
     {
         private readonly IUsuarioApplication _application;
-        public UsuarioController(IUsuarioApplication application, ILogger<UsuarioController> log)
+        private readonly IAmazonS3 _amazonS3;
+        private static readonly List<string> _extensoesImagem =
+        new List<string>() { "image/jpeg", "image/png", "image/jpg"};
+        private readonly AmazonRekognitionClient _rekognitionClient;
+        public UsuarioController(IUsuarioApplication application, IAmazonS3 amazonS3, AmazonRekognitionClient rekognitionClient )
         {
             _application = application;
+            _amazonS3 = amazonS3;
+            _rekognitionClient = rekognitionClient;
         }
-
+        //UUDI - SQL / GUID - VISUAL STUDIO
         [HttpPost()]
         public async Task<IActionResult> AdicionarUsuario(UsuarioDTO usuarioDTO)
         {

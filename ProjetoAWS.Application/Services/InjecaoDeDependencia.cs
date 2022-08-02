@@ -3,32 +3,39 @@ using Amazon.Runtime;
 using Amazon.S3;
 using Curso.ProjetoAWS.Data.Repositorios;
 using Curso.ProjetoAWS.Lib.Data.Repositorios.Interface;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProjetoAWS.Lib.Data;
 
+
 namespace ProjetoAWS.Application.Services
 {
-    public static class InjecaoDeDependecia
+    public static class InjecaoDeDependencia
     {
-        public static void InjetarDependencias( IServiceCollection collection, IConfiguration configuration)
+        private static string[] args;
+        public static IServiceCollection AddConfig( this IServiceCollection services, IConfiguration configuration)
         {
-            collection.AddDbContext<ProjetoAWSContext>(
+            var builder = WebApplication.CreateBuilder(args);
+            
+            services.AddDbContext<ProjetoAWSContext>(
                        conn => conn.UseNpgsql(configuration.GetConnectionString("ProjetoAWSDB"))
                        .UseSnakeCaseNamingConvention());
 
-            collection.AddScoped<IUsuarioRepositorio, UsuarioRepositorio>();
-            collection.AddScoped<IUsuarioApplication, UsuarioApplication>();
+            services.AddScoped<IUsuarioRepositorio, UsuarioRepositorio>();
+            services.AddScoped<IUsuarioApplication, UsuarioApplication>();
             
             var awsOptions = configuration.GetAWSOptions();
             awsOptions.Credentials = new EnvironmentVariablesAWSCredentials();
-            collection.AddDefaultAWSOptions(awsOptions);
-            collection.AddAWSService<IAmazonS3>();
-            collection.AddScoped<AmazonRekognitionClient>();
+            services.AddDefaultAWSOptions(awsOptions);
+            services.AddAWSService<IAmazonS3>();
+            services.AddScoped<AmazonRekognitionClient>();
+            return services;
         }
     }
 }
+
 
        
 /*builder.Services.AddControllers();

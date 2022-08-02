@@ -18,10 +18,7 @@ builder.Services.AddControllers()
 
 /*InjecaoDeDependecia(builder.Services, builder.Configuration);*/
 
-void InjecaoDeDependecia(IServiceCollection services, ConfigurationManager configuration)
-{
-    throw new NotImplementedException();
-}
+builder.Services.AddConfig(builder.Configuration);
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

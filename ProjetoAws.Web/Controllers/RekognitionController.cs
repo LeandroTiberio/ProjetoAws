@@ -25,7 +25,7 @@ namespace ProjetoAws.Web.Controllers
                 {
                     S3Object = new S3Object()
                     {
-                        Bucket = "imagem-Aulas",
+                        Bucket = "imagem-aulas",
                         Name = nomeArquivoS3
                     }
                 };
