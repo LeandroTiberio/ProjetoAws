@@ -1,4 +1,4 @@
-namespace ServicesAWS
+namespace ProjetoAWS.ServicesAWS
 {
     public class ServicesDaAws : IServicesDaAws
     {
@@ -11,20 +11,7 @@ namespace ServicesAWS
             _IAmazonS3 _amazonS3;
             _RekognitionClient rekognitionClient;
         }
-        public async Task CadastrarImagem(int id, IFormFile imagem)
-        {
-            var nomeArquivo = await SalvarNoS3(imagem);
-            var imagemValida = await ValidarImagem(nomeArquivo);
-            if (imagemValida)
-            {
-                await _repositorio.AtualizarUrlImagemCadastro(id, nomeArquivo);
-            }
-            else
-            {
-                var response = await _amazonS3.DeleteObjectAsync("imagens-aulas", nomeArquivo);
-                throw new ErroDeValidacaoException("Imagem inválida!");
-            }
-        }
+        
         private async Task<string> SalvarNoS3(IFormFile imagem)
         {
             if (!_extensoesImagem.Contains(imagem.ContentType))

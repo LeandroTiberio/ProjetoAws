@@ -13,10 +13,12 @@ namespace ProjetoAWS.Application.Services
     public class UsuarioApplication : IUsuarioApplication
     {
         private readonly IUsuarioRepositorio _repositorio;
+        private readonly IServicesDaAws _servicesDaAws;
         
-        public UsuarioApplication(IUsuarioRepositorio repositorio)
+        public UsuarioApplication(IUsuarioRepositorio repositorio, ServicesDaAws servicesDaAws )
         {
             _repositorio = repositorio;
+            _servicesDaAws servicesDaAws;
             
         }
 
@@ -36,9 +38,23 @@ namespace ProjetoAWS.Application.Services
         {
             return await _repositorio.BuscarPorId(id);
         }
+        public async Task CadastrarImagem(int id, IFormFile imagem)
+        {
+            var nomeArquivo = await _servicesDaAws.SalvarNoS3(imagem);
+            var imagemValida = await _servicesDaAws.ValidarImagem(nomeArquivo);
+            if (imagemValida)
+            {
+                await _repositorio.AtualizarUrlImagemCadastro(id, nomeArquivo);
+            }
+            else
+            {
+                var response = await _servicesDaAws.DeleteObjectAsync("imagens-aulas", nomeArquivo);
+                throw new ErroDeValidacaoException("Imagem inválida!");
+            }
+        }
         public async Task<int> LoginEmail(string email, string senha)
         {
-            var usuario = await _repositorio.BuscarPorEmail(email);
+            var usuario = await _servicesDaAws.BuscarPorEmail(email);
             var validacao = await VerificarSenha(usuario, senha);
             if (validacao)
             {
@@ -49,6 +65,16 @@ namespace ProjetoAWS.Application.Services
         private async Task<bool> VerificarSenha(Usuario usuario, string senha)
         {
             return usuario.Senha == senha;
+        }
+         public async Task<bool> LoginImagem(int id, IFormFile image)
+        {
+            var buscarUsuarioId = await _repositorio.BuscarPorId(id);//Buscar usuário no bando por Id.
+            var buscarUsuarioImagem = await _servicesDaAws.BuscarUsuarioPorImagem(buscarUsuarioId.UrlImagemCadastro, image);
+            if(buscarUsuarioImagem)
+            {
+                return true;
+            }
+            throw new Exception ("A imagem do usuário não corresponde com o cadastro.");
         }
         
         public async Task AtualizarEmailUsuarioPorId(int id, string email)

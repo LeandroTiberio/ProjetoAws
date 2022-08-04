@@ -5,6 +5,7 @@ using ProjetoAWS.Application.DTOs;
 using ProjetoAWS.Application.Services;
 using Amazon.S3;
 using Amazon.Rekognition;
+using Curso.ProjetoAWS.Lib.Data.Repositorios.Interface;
 
 namespace ProjetoAws.Web.Controllers
 {

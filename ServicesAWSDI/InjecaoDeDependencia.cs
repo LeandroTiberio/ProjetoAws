@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ProjetoAWS.Lib.Data;
 
 
-namespace ProjetoAWS.Application.Services
+namespace ProjetoAWS.ServicesAWSDI
 {
     public static class InjecaoDeDependencia
     {
