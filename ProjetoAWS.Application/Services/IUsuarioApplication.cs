@@ -10,11 +10,12 @@ namespace ProjetoAWS.Application.Services
         
         Task<List<Usuario>> BuscarTodos();
         Task<Usuario> BuscarUsuarioPorID(int id);
-        Task CadastrarImagem(int id, IFormFile imagem);
+        Task CadastrarImagem(int id, IFormFile image);
         Task<int> LoginEmail(string email, string senha);
         Task<bool> LoginImagem(int id, IFormFile image);
         Task AtualizarEmailUsuarioPorId(int id, string email);
         Task DeletarPorId(int id);
+        
     }
 }
 

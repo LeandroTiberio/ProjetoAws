@@ -1,4 +1,4 @@
-using Amazon.Rekognition;
+/*using Amazon.Rekognition;
 using Amazon.Runtime;
 using Amazon.S3;
 using Curso.ProjetoAWS.Data.Repositorios;
@@ -7,8 +7,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ProjetoAWS.Application.Services;
 using ProjetoAWS.Lib.Data;
-
+using ProjetoAWS.ServicesAWS;
+using ServicesAWS;
 
 namespace ProjetoAWS.ServicesAWSDI
 {
@@ -25,6 +27,7 @@ namespace ProjetoAWS.ServicesAWSDI
 
             services.AddScoped<IUsuarioRepositorio, UsuarioRepositorio>();
             services.AddScoped<IUsuarioApplication, UsuarioApplication>();
+            services.AddScoped<IServicesDaAws, ServicesDaAws>();
             
             var awsOptions = configuration.GetAWSOptions();
             awsOptions.Credentials = new EnvironmentVariablesAWSCredentials();

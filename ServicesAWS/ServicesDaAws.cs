@@ -1,3 +1,10 @@
+using Amazon.Rekognition;
+using Amazon.Rekognition.Model;
+using Amazon.S3;
+using Amazon.S3.Model;
+using Microsoft.AspNetCore.Http;
+using ServicesAWS;
+
 namespace ProjetoAWS.ServicesAWS
 {
     public class ServicesDaAws : IServicesDaAws
@@ -8,15 +15,15 @@ namespace ProjetoAWS.ServicesAWS
         private readonly AmazonRekognitionClient _rekognitionClient;
         public ServicesDaAws(IAmazonS3 amazonS3, AmazonRekognitionClient rekognitionClient )
         {
-            _IAmazonS3 _amazonS3;
-            _RekognitionClient rekognitionClient;
+            _amazonS3 = amazonS3;
+            _rekognitionClient = rekognitionClient;
         }
         
-        private async Task<string> SalvarNoS3(IFormFile imagem)
+        public async Task<string> SalvarNoS3(IFormFile imagem)
         {
             if (!_extensoesImagem.Contains(imagem.ContentType))
             {
-                throw new ErroDeValidacaoException("Tipo de foto inválido!");
+                throw new Exception("Tipo de foto inválido!");
             }
             using (var streamDaImagem = new MemoryStream())
             {
@@ -30,7 +37,7 @@ namespace ProjetoAWS.ServicesAWS
                 return request.Key;
             }
         }
-        private async Task<bool> ValidarImagem(string nomeArquivo)
+        public async Task<bool> ValidarImagem(string nomeArquivo)
         {
             var request = new DetectFacesRequest();
             var imagem = new Image();
@@ -54,16 +61,16 @@ namespace ProjetoAWS.ServicesAWS
             }
             return false;
         }
-        public async Task LoginImagem(int id, IFormFile imagem)
+        /*public async Task LoginImagem(int id, IFormFile imagem)
         {
-            var usuario = await _repositorio.BuscarPorId(id);
+            var usuario = await _repositorio .BuscarPorId(id);
             var verificacao = await VerificarImagem(usuario.UrlImagemCadastro, imagem);
             if (verificacao == false)
             {
                 throw new ErroDeValidacaoException("Face não compativel com cadastro!");
             }
-        }
-        private async Task<bool> VerificarImagem(string nomeArquivoS3, IFormFile fotoLogin)
+        }*/
+        public async Task<bool> VerificarImagem(string nomeArquivoS3, IFormFile fotoLogin)
         {
             using (var memStream = new MemoryStream())
             {
@@ -93,7 +100,12 @@ namespace ProjetoAWS.ServicesAWS
                     return true;
                 }
                 return false;
+
             }
+        }
+        public async Task DeletarImagemNoS3(string nomeBucket, string nomeArquivo)
+        {
+            var response = await _amazonS3.DeleteObjectAsync("imagem-aulas", nomeArquivo);
         }
     }
 }

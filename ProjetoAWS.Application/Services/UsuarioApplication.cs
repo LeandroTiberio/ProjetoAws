@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Http;
 using ProjetoAWS.Application.DTOs;
 using ProjetoAWS.Lib.Exceptions;
 using ProjetoAWS.Lib.Models;
+using ProjetoAWS.ServicesAWS;
+using ServicesAWS;
 
 namespace ProjetoAWS.Application.Services
 {
@@ -14,11 +16,13 @@ namespace ProjetoAWS.Application.Services
     {
         private readonly IUsuarioRepositorio _repositorio;
         private readonly IServicesDaAws _servicesDaAws;
+        public static List<Usuario> ListaUsuarios { get; set; } = new List<Usuario>();
+        public readonly List<string> _imageFormats = new List<string>() { "image/jpeg", "image/png", "image/jpn"};
         
-        public UsuarioApplication(IUsuarioRepositorio repositorio, ServicesDaAws servicesDaAws )
+        public UsuarioApplication(IUsuarioRepositorio repositorio, IServicesDaAws servicesDaAws )
         {
             _repositorio = repositorio;
-            _servicesDaAws servicesDaAws;
+            _servicesDaAws = servicesDaAws;
             
         }
 
@@ -48,19 +52,19 @@ namespace ProjetoAWS.Application.Services
             }
             else
             {
-                var response = await _servicesDaAws.DeleteObjectAsync("imagens-aulas", nomeArquivo);
-                throw new ErroDeValidacaoException("Imagem inválida!");
+                await _servicesDaAws.DeletarImagemNoS3 ("imagens-aulas", nomeArquivo);
+                throw new Exception("Imagem inválida!");
             }
         }
         public async Task<int> LoginEmail(string email, string senha)
         {
-            var usuario = await _servicesDaAws.BuscarPorEmail(email);
+            var usuario = await _repositorio.BuscarPorEmail(email);
             var validacao = await VerificarSenha(usuario, senha);
             if (validacao)
             {
                 return usuario.Id;
             }
-            throw new ErroDeValidacaoException("Senha invalida!");
+            throw new Exception("Senha invalida!");
         }
         private async Task<bool> VerificarSenha(Usuario usuario, string senha)
         {
@@ -68,8 +72,8 @@ namespace ProjetoAWS.Application.Services
         }
          public async Task<bool> LoginImagem(int id, IFormFile image)
         {
-            var buscarUsuarioId = await _repositorio.BuscarPorId(id);//Buscar usuário no bando por Id.
-            var buscarUsuarioImagem = await _servicesDaAws.BuscarUsuarioPorImagem(buscarUsuarioId.UrlImagemCadastro, image);
+            var buscarUsuarioId = await _repositorio.BuscarPorId(id);
+            var buscarUsuarioImagem = await _servicesDaAws.VerificarImagem(buscarUsuarioId.UrlImagemCadastro , image);
             if(buscarUsuarioImagem)
             {
                 return true;

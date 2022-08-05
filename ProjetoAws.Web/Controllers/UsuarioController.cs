@@ -14,15 +14,12 @@ namespace ProjetoAws.Web.Controllers
     public class UsuarioController : ControllerBase 
     {
         private readonly IUsuarioApplication _application;
-        private readonly IAmazonS3 _amazonS3;
-        private static readonly List<string> _extensoesImagem =
-        new List<string>() { "image/jpeg", "image/png", "image/jpg"};
-        private readonly AmazonRekognitionClient _rekognitionClient;
-        public UsuarioController(IUsuarioApplication application, IAmazonS3 amazonS3, AmazonRekognitionClient rekognitionClient )
+        
+        
+        public UsuarioController(IUsuarioApplication application )
         {
             _application = application;
-            _amazonS3 = amazonS3;
-            _rekognitionClient = rekognitionClient;
+            
         }
         //UUDI - SQL / GUID - VISUAL STUDIO
         [HttpPost()]

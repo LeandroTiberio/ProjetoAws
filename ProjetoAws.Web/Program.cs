@@ -5,8 +5,8 @@ using Curso.ProjetoAWS.Data.Repositorios;
 using Curso.ProjetoAWS.Lib.Data.Repositorios.Interface;
 using Microsoft.EntityFrameworkCore;
 using ProjetoAws.Web.Controllers.Middlewares;
-using ProjetoAWS.Application.Services;
 using ProjetoAWS.Lib.Data;
+using ServicesAWSDI;
 using static System.Net.Mime.MediaTypeNames;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,7 +18,13 @@ builder.Services.AddControllers()
 
 /*InjecaoDeDependecia(builder.Services, builder.Configuration);*/
 
-builder.Services.AddConfig(builder.Configuration);
+/*builder.Services.AddConfig(builder.Configuration);*/
+
+var injetarDependencia = new InjecaoDeDependeciaProgram();
+injetarDependencia.InjetarDependenciaProgram(builder);
+
+/*var injetarDependencia = new Independencia();
+injetarDependencia.InjetarDependenciaProgram(builder);*/
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
