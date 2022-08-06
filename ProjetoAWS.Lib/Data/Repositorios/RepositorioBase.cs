@@ -22,7 +22,7 @@ namespace Curso.ProjetoAWS.Data.Repositorios
             await _context.SaveChangesAsync();
         }
 
-        public async Task<T> BuscarPorId(int id)
+        public async Task<T> BuscarPorId(Guid id)
         {
             //First = primeiro que tenha mesmo id
             return await _dbSet.AsNoTracking().FirstAsync(x => x.Id == id);
@@ -33,7 +33,7 @@ namespace Curso.ProjetoAWS.Data.Repositorios
             return await _dbSet.AsNoTracking().ToListAsync();
         }
 
-        public async Task DeletarItemDesejado(int id)
+        public async Task DeletarItemDesejado(Guid id)
         {
             //Find = achar pelo id
             var itemARemover = await _dbSet.FindAsync(id);

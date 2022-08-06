@@ -26,9 +26,9 @@ namespace ProjetoAWS.Application.Services
             
         }
 
-        public async Task<int> AdicionarUsuario(UsuarioDTO usuarioDTO)
+        public async Task<Guid> AdicionarUsuario(UsuarioDTO usuarioDTO)
         {
-            var usuario = new Usuario(usuarioDTO.Id, usuarioDTO.Nome, usuarioDTO.Cpf, usuarioDTO.Email, usuarioDTO.Senha,
+            var usuario = new Usuario(usuarioDTO.Nome, usuarioDTO.Cpf, usuarioDTO.Email, usuarioDTO.Senha,
                                     usuarioDTO.DataNascimento, usuarioDTO.UrlImagemCadastro, usuarioDTO.DataCriacao);
             await _repositorio.Adicionar(usuario);
             return usuario.Id;
@@ -38,11 +38,11 @@ namespace ProjetoAWS.Application.Services
         {
             return await _repositorio.BuscarTodos();
         }
-        public async Task<Usuario> BuscarUsuarioPorID(int id)
+        public async Task<Usuario> BuscarUsuarioPorID(Guid id)
         {
             return await _repositorio.BuscarPorId(id);
         }
-        public async Task CadastrarImagem(int id, IFormFile imagem)
+        public async Task CadastrarImagem(Guid id, IFormFile imagem)
         {
             var nomeArquivo = await _servicesDaAws.SalvarNoS3(imagem);
             var imagemValida = await _servicesDaAws.ValidarImagem(nomeArquivo);
@@ -56,7 +56,7 @@ namespace ProjetoAWS.Application.Services
                 throw new Exception("Imagem inválida!");
             }
         }
-        public async Task<int> LoginEmail(string email, string senha)
+        public async Task<Guid> LoginEmail(string email, string senha)
         {
             var usuario = await _repositorio.BuscarPorEmail(email);
             var validacao = await VerificarSenha(usuario, senha);
@@ -70,7 +70,7 @@ namespace ProjetoAWS.Application.Services
         {
             return usuario.Senha == senha;
         }
-         public async Task<bool> LoginImagem(int id, IFormFile image)
+         public async Task<bool> LoginImagem(Guid id, IFormFile image)
         {
             var buscarUsuarioId = await _repositorio.BuscarPorId(id);
             var buscarUsuarioImagem = await _servicesDaAws.VerificarImagem(buscarUsuarioId.UrlImagemCadastro , image);
@@ -81,11 +81,11 @@ namespace ProjetoAWS.Application.Services
             throw new Exception ("A imagem do usuário não corresponde com o cadastro.");
         }
         
-        public async Task AtualizarEmailUsuarioPorId(int id, string email)
+        public async Task AtualizarEmailUsuarioPorId(Guid id, string email)
         {
             await _repositorio.AtualizarEmail(id, email);
         }
-        public async Task DeletarPorId(int id)
+        public async Task DeletarPorId(Guid id)
         {
             await _repositorio.DeletarItemDesejado(id);
         }

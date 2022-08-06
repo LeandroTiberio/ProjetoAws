@@ -13,13 +13,13 @@ namespace Curso.ProjetoAWS.Data.Repositorios
         {
 
         }
-        public async Task AtualizarEmail(int id, string email)
+        public async Task AtualizarEmail(Guid id, string email)
         {
             await _context.Usuarios.FirstAsync(x => x.Email == email);
             await _context.SaveChangesAsync();
             
         }
-        public async Task AtualizarUrlImagemCadastro(int id, string urlAtualizada)
+        public async Task AtualizarUrlImagemCadastro(Guid id, string urlAtualizada)
         {
             await _context.Usuarios.FirstAsync(x => x.Id == id);
             await _context.SaveChangesAsync();
