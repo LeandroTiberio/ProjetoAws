@@ -16,13 +16,15 @@ namespace ProjetoAWS.Application.Services
     {
         private readonly IUsuarioRepositorio _repositorio;
         private readonly IServicesDaAws _servicesDaAws;
+        private readonly ITesteHash _testeHash;
         public static List<Usuario> ListaUsuarios { get; set; } = new List<Usuario>();
         public readonly List<string> _imageFormats = new List<string>() { "image/jpeg", "image/png", "image/jpn"};
         
-        public UsuarioApplication(IUsuarioRepositorio repositorio, IServicesDaAws servicesDaAws )
+        public UsuarioApplication(IUsuarioRepositorio repositorio, IServicesDaAws servicesDaAws, ITesteHash _testeHash )
         {
             _repositorio = repositorio;
             _servicesDaAws = servicesDaAws;
+            _testeHash = testeHash;
             
         }
 
