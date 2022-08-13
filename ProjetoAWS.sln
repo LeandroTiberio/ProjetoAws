@@ -9,6 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjetoAws.Web", "ProjetoAw
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjetoAWS.Application", "ProjetoAWS.Application\ProjetoAWS.Application.csproj", "{ABAD388E-4DC0-4D23-8E10-DC4D5DC346BE}"
 EndProject
+
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +31,9 @@ Global
 		{ABAD388E-4DC0-4D23-8E10-DC4D5DC346BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ABAD388E-4DC0-4D23-8E10-DC4D5DC346BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ABAD388E-4DC0-4D23-8E10-DC4D5DC346BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C7FDD49-0E1C-49D0-A88A-4A201595AD5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C7FDD49-0E1C-49D0-A88A-4A201595AD5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C7FDD49-0E1C-49D0-A88A-4A201595AD5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C7FDD49-0E1C-49D0-A88A-4A201595AD5D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,9 +1,12 @@
+using System.Text;
 using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Curso.ProjetoAWS.Lib.Data.Repositorios.Interface;
+using Konscious.Security.Cryptography;
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 using ProjetoAWS.Application.DTOs;
 using ProjetoAWS.Lib.Exceptions;
 using ProjetoAWS.Lib.Models;
@@ -16,24 +19,28 @@ namespace ProjetoAWS.Application.Services
     {
         private readonly IUsuarioRepositorio _repositorio;
         private readonly IServicesDaAws _servicesDaAws;
-        private readonly ITesteHash _testeHash;
         public static List<Usuario> ListaUsuarios { get; set; } = new List<Usuario>();
         public readonly List<string> _imageFormats = new List<string>() { "image/jpeg", "image/png", "image/jpn"};
         
-        public UsuarioApplication(IUsuarioRepositorio repositorio, IServicesDaAws servicesDaAws, ITesteHash _testeHash )
+        public UsuarioApplication(IUsuarioRepositorio repositorio, IServicesDaAws servicesDaAws )
         {
             _repositorio = repositorio;
             _servicesDaAws = servicesDaAws;
-            _testeHash = testeHash;
             
         }
 
-        public async Task<Guid> AdicionarUsuario(UsuarioDTO usuarioDTO)
+        public async Task<JsonIdHash> AdicionarUsuario(UsuarioDTO usuarioDTO)
         {
+            var senhaHash = await MudarSenhaEmHash(usuarioDTO.Senha);
             var usuario = new Usuario(usuarioDTO.Nome, usuarioDTO.Cpf, usuarioDTO.Email, usuarioDTO.Senha,
                                     usuarioDTO.DataNascimento, usuarioDTO.UrlImagemCadastro, usuarioDTO.DataCriacao);
             await _repositorio.Adicionar(usuario);
-            return usuario.Id;
+            //return usuario.Id;
+            var retorna= new JsonIdHash()
+            {
+                Id = usuario.Id.ToString()
+            };
+            return (retorna);
         }
        
         public async Task<List<Usuario>> BuscarTodos()
@@ -58,21 +65,41 @@ namespace ProjetoAWS.Application.Services
                 throw new Exception("Imagem inválida!");
             }
         }
-        public async Task<Guid> LoginEmail(string email, string senha)
+        public async Task<JsonIdHash> LoginEmail(string email, string senha)
         {
             var usuario = await _repositorio.BuscarPorEmail(email);
             var validacao = await VerificarSenha(usuario, senha);
             if (validacao)
             {
-                return usuario.Id;
+                throw new Exception("Senha invalida!");
             }
-            throw new Exception("Senha invalida!");
+            
+            var retorno = new JsonIdHash()
+            {
+                Id = usuario.Id.ToString()
+            };
+            return (retorno);
+            
+         
         }
         private async Task<bool> VerificarSenha(Usuario usuario, string senha)
         {
-            return usuario.Senha == senha;
+            var senhaHash = await MudarSenhaEmHash(senha);
+            return senha == senhaHash;
         }
-         public async Task<bool> LoginImagem(Guid id, IFormFile image)
+        public async Task<string> MudarSenhaEmHash(string senha)
+        {
+            byte[] password = Encoding.UTF8.GetBytes(senha);
+            byte[] salt = Encoding.UTF8.GetBytes("UOrd7FcW33T5gy");
+            var argon2 = new Argon2d(password);
+            argon2.DegreeOfParallelism = 10;
+            argon2.MemorySize = 8192;
+            argon2.Iterations = 20;
+            argon2.Salt = salt;
+            var hash = await argon2.GetBytesAsync(64);
+            return Convert.ToBase64String(hash);
+        }
+        public async Task<bool> LoginImagem(Guid id, IFormFile image)
         {
             var buscarUsuarioId = await _repositorio.BuscarPorId(id);
             var buscarUsuarioImagem = await _servicesDaAws.VerificarImagem(buscarUsuarioId.UrlImagemCadastro , image);
@@ -82,6 +109,7 @@ namespace ProjetoAWS.Application.Services
             }
             throw new Exception ("A imagem do usuário não corresponde com o cadastro.");
         }
+        
         
         public async Task AtualizarEmailUsuarioPorId(Guid id, string email)
         {

@@ -6,13 +6,14 @@ namespace ProjetoAWS.Application.Services
 {
     public interface IUsuarioApplication 
     {
-        Task<Guid> AdicionarUsuario(UsuarioDTO usuarioDTO);  
+        Task<JsonIdHash> AdicionarUsuario(UsuarioDTO usuarioDTO);  
         
         Task<List<Usuario>> BuscarTodos();
         Task<Usuario> BuscarUsuarioPorID(Guid id);
         Task CadastrarImagem(Guid id, IFormFile image);
-        Task<Guid> LoginEmail(string email, string senha);
+        Task<JsonIdHash> LoginEmail(string email, string senha);
         Task<bool> LoginImagem(Guid id, IFormFile image);
+        Task <string> MudarSenhaEmHash(string senha);
         Task AtualizarEmailUsuarioPorId(Guid id, string email);
         Task DeletarPorId(Guid id);
         
